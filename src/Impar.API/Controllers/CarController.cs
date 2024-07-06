@@ -24,7 +24,7 @@ public class CarController : ControllerBase
 		return Ok(carDtos);
 	}
 
-	[HttpGet("{id}")]
+	[HttpGet("{id:int}")]
 	public async Task<ActionResult> Get(int id)
 	{
 		var carDto = await _carService.GetCarByIdAsync(id);
@@ -38,14 +38,14 @@ public class CarController : ControllerBase
 		return Ok(carDto);
 	}
 
-	[HttpPut("{id}")]
+	[HttpPut("{id:int}")]
 	public async Task<ActionResult> Update(int id, [FromForm] CarUpdateDto carUpdateDto)
 	{
 		await _carService.UpdateCarAsync(id, carUpdateDto);
 		return Ok();
 	}
 
-	[HttpDelete("{id}")]
+	[HttpDelete("{id:int}")]
 	public async Task<ActionResult> Delete(int id)
 	{
 		await _carService.DeleteCarAsync(id);

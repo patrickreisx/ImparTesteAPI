@@ -1,4 +1,5 @@
-﻿using Impar.Infra.Context;
+﻿using AutoMapper;
+using Impar.Infra.Context;
 using ImparTesteAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Impar.Domain.Models;
@@ -10,10 +11,12 @@ namespace ImparTesteAPI.Services
 	public class CarService : ICarService
 	{
 		private readonly EntityContext _context;
+		private readonly IMapper _mapper;
 
-		public CarService(EntityContext context)
+		public CarService(EntityContext context, IMapper mapper)
 		{
 			_context = context;
+			_mapper = mapper;
 		}
 
 		public async Task<List<CarReadDto>> GetAllCarsAsync(PaginationAndSearchParameters paginationAndSearchParameters)
@@ -24,20 +27,15 @@ namespace ImparTesteAPI.Services
 				query = query.Where(car => car.Name.Contains(paginationAndSearchParameters.SearchName));
 			}
 
-			var cars = await query
+			var car = await query
 				.Skip((paginationAndSearchParameters.PageNumber - 1) * paginationAndSearchParameters.PageSize)
 				.Take(paginationAndSearchParameters.PageSize)
 				.Include(c => c.Photo)
 				.ToListAsync();
 
-			var carDtos = cars.Select(car => new CarReadDto
-			{
-				Id = car.Id,
-				Name = car.Name,
-				Base64 = car.Photo.Base64
-			}).ToList();
+			var carsDto = _mapper.Map<List<CarReadDto>>(car);
 
-			return carDtos;
+			return carsDto;
 		}
 
 		public async Task<CarReadDto> GetCarByIdAsync(int id)
@@ -49,22 +47,14 @@ namespace ImparTesteAPI.Services
 				return null;
 			}
 
-			var carDto = new CarReadDto
-			{
-				Id = car.Id,
-				Name = car.Name,
-				Base64 = car.Photo.Base64
-			};
+			var carDto = _mapper.Map<CarReadDto>(car);
 
 			return carDto;
 		}
 
 		public async Task<CarReadDto> CreateCarAsync(CarCreateDto carCreateDto)
 		{
-			var car = new Car
-			{
-				Name = carCreateDto.Name,
-			};
+			var car = _mapper.Map<Car>(carCreateDto);
 
 			_context.Cars.Add(car);
 			await _context.SaveChangesAsync();
@@ -84,14 +74,11 @@ namespace ImparTesteAPI.Services
 
 				_context.Photos.Add(photo);
 				await _context.SaveChangesAsync();
+
+				car.Photo = photo;
 			}
 
-			var carDto = new CarReadDto
-			{
-				Id = car.Id,
-				Name = car.Name,
-				Base64 = car.Photo.Base64
-			};
+			var carDto = _mapper.Map<CarReadDto>(car);
 
 			return carDto;
 		}

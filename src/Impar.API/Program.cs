@@ -8,6 +8,9 @@ using Serilog.Events;
 using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Debug()
 	.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -21,31 +24,26 @@ const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy(name: myAllowSpecificOrigins,
-		policy  =>
-		{
-			policy.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().Build();
-		});
+		policy => { policy.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().Build(); });
 });
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<EntityContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!));
 
 builder.Services.AddControllers().AddJsonOptions(x =>
-	x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+{
+	x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
 
-builder.Services.AddControllers().AddJsonOptions(x =>
-	x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ICarService, CarService>();
 
-
 var app = builder.Build();
+
 app.UseCors(myAllowSpecificOrigins);
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
 	app.UseSwagger();
@@ -53,9 +51,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
